@@ -22,7 +22,7 @@ setup(
         'particle swarm optimization',
         'optimization',
         'python'
-        ],
+    ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Education',
@@ -43,5 +43,5 @@ setup(
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities'
-        ]
-    )
+    ]
+)
