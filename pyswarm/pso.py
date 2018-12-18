@@ -129,7 +129,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
     # Iterate until termination criterion met
     it = 1
-    while it <= maxiter and fdiff < feps and xdiff < xeps:
+    while it <= maxiter and fdiff > feps and xdiff > xeps:
         rp = np.random.uniform(size=(S, D))
         rg = np.random.uniform(size=(S, D))
 
