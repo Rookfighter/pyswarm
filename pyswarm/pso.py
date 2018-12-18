@@ -83,7 +83,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     if processes > 1:
         import multiprocessing
         mp_pool = multiprocessing.Pool(processes)
-        chunksize = np.ceil(swarmsize / (multiprocessing.cpu_count() * 10))
+        chunksize = np.ceil(swarmsize / (processes * 10))
         chunksize = int(chunksize)
 
     # Initialize the particle swarm
