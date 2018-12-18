@@ -6,7 +6,7 @@ def _obj_wrapper(func, args, state):
 
 
 def minimize(func, bounds, args=(),
-swarm=None, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
+swarm=None, init_guess=None, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
 xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     """
     Perform a particle swarm optimization (PSO)
@@ -71,6 +71,9 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
         swarm = np.array(swarm)
     assert(type(swarm) is np.ndarray)
     swarmsize = swarm.shape[0]
+
+    if init_guess is not None:
+        swarm[0, :] = init_guess
 
     assert(hasattr(func, '__call__'))
     assert(callback is None or hasattr(callback, '__call__'))
