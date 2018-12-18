@@ -55,10 +55,10 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
         The swarm's best known position (optimal design)
     f : scalar
         The objective value at ``xg``
-    p : array
+    xp : array
         The best known position per particle
     pf: arrray
-        The objective values at each position in p
+        The objective values at each position in xp
 
     """
     bounds = np.array(bounds)
@@ -93,7 +93,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     D = bounds.shape[0]  # the number of dimensions each particle has
     x = np.random.rand(S, D)  # particle positions
     v = np.zeros((S, D))  # particle velocities
-    p = np.zeros((S, D))  # best particle positions
+    xp = np.zeros((S, D))  # best particle positions
     fx = np.zeros(S)  # current particle function values
     fp = np.ones(S) * np.inf  # best particle function values
     xg = np.zeros(D)  # best swarm position
@@ -114,13 +114,13 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
             fx[i] = obj(x[i, :])
 
     # Store particle's best position
-    p[:, :] = x[:, :]
+    xp[:, :] = x[:, :]
     fp[:] = fx[:]
 
     # Update swarm's best position
     i_min = np.argmin(fp)
     fg = fp[i_min]
-    xg[:] = p[i_min, :]
+    xg[:] = xp[i_min, :]
 
     # Initialize the particle's velocity
     v = np.random.rand(S, D)
@@ -134,7 +134,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
         rg = np.random.uniform(size=(S, D))
 
         # Update the particles velocities
-        rp *= p - x
+        rp *= xp - x
         rp *= phip
         rg *= xg - x
         rg *= phig
@@ -161,16 +161,16 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
         # Store particle's best position
         i_update = fx < fp
-        p[i_update, :] = x[i_update, :]
+        xp[i_update, :] = x[i_update, :]
         fp[i_update] = fx[i_update]
 
         # Compare swarm's best position with global best position
         i_min = np.argmin(fp)
         if fp[i_min] < fg:
-            xdiff = np.sum((xg - p[i_min, :])**2)
+            xdiff = np.sum((xg - xp[i_min, :])**2)
             fdiff = np.abs(fg - fp[i_min])
 
-            xg[:] = p[i_min, :]
+            xg[:] = xp[i_min, :]
             fg = fp[i_min]
 
         if disp:
@@ -184,8 +184,8 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
             print('\t'.join(tmp))
 
         if callback is not None:
-            callback(xg, fg, p, fp)
+            callback(xg, fg, xp, fp)
 
         it += 1
 
-    return xg, fg, p, fp
+    return xg, fg, xp, fp
