@@ -48,7 +48,7 @@ def weight(x, *args):
     H, d, t = x  # all in inches
     B, rho, E, P = args
     return rho*2*np.pi*d*t*np.sqrt((B/2)**2 + H**2)
-    
+
 def stress(x, *args):
     H, d, t = x  # all in inches
     B, rho, E, P = args
@@ -75,9 +75,9 @@ rho = 0.3  # lb/in^3
 E = 30000  # kpsi
 P = 66  # lb (force)
 args = (B, rho, E, P)
-lb = [10, 1, 0.01]
-ub = [30, 3, 0.25]
-xopt4, fopt4 = pso(weight, lb, ub, f_ieqcons=mycons, args=args)
+bounds = [(10, 30), (1, 3), (0.01, 0.25)]
+
+xopt4, fopt4 = pso.minimize(weight, bounds, args=args)
 
 print('The optimum is at:')
 print('    {}'.format(xopt4))
@@ -87,4 +87,3 @@ print('Constraint functions:')
 print('    stress         : {}'.format(stress(xopt4, *args)))
 print('    buckling stress: {}'.format(buckling_stress(xopt4, *args)))
 print('    deflection     : {}'.format(deflection(xopt4, *args)))
-

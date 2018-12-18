@@ -1,8 +1,8 @@
 from functools import partial
 import numpy as np
 
-def _obj_wrapper(func, args, kwargs, x):
-    return func(x, *args, **kwargs)
+def _obj_wrapper(func, args, x):
+    return func(x, *args)
 
 
 def minimize(func, bounds, args=(),
