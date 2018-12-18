@@ -6,7 +6,7 @@ def _obj_wrapper(func, args, state):
 
 
 def minimize(func, bounds, args=(),
-swarmsize=None, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
+swarm=None, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
 xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     """
     Perform a particle swarm optimization (PSO)
@@ -62,8 +62,15 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
     """
     bounds = np.array(bounds)
-    if swarmsize is None:
-        swarmsize = 20 * bounds.shape[0]
+
+    if swarm is None:
+        swarm = int(20 * bounds.shape[0])
+    if type(swarm) is int:
+        swarm = np.random.rand(swarm, bounds.shape[0])
+    if type(swarm) is list:
+        swarm = np.array(swarm)
+    assert(type(swarm) is np.ndarray)
+    swarmsize = swarm.shape[0]
 
     assert(hasattr(func, '__call__'))
     assert(callback is None or hasattr(callback, '__call__'))
@@ -89,7 +96,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     # Initialize the particle swarm
     S = swarmsize
     D = bounds.shape[0]  # the number of dimensions each particle has
-    state = np.random.rand(S, D)  # particle positions
+    state = swarm.copy()  # particle positions
     vel = np.zeros((S, D))  # particle velocities
     state_p = np.zeros((S, D))  # best particle positions
     fval = np.zeros(S)  # current particle function values
