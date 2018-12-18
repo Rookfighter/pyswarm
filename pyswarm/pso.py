@@ -79,12 +79,12 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
     # Initialize the multiprocessing module if necessary
     mp_pool = None
-    chunk_size = None
+    chunksize = None
     if processes > 1:
         import multiprocessing
         mp_pool = multiprocessing.Pool(processes)
-        chunk_size = np.ceil(swarmsize / (multiprocessing.cpu_count() * 10))
-        chunk_size = int(chunk_size)
+        chunksize = np.ceil(swarmsize / (multiprocessing.cpu_count() * 10))
+        chunksize = int(chunksize)
 
     # Initialize the particle swarm
     S = swarmsize
@@ -106,7 +106,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
     # Calculate objective and constraints for each particle
     if mp_pool is not None:
-        fx = np.array(mp_pool.map(obj, x, chunk_size=chunk_size))
+        fx = np.array(mp_pool.map(obj, x, chunksize)).flatten()
     else:
         for i in range(x.shape[0]):
             fx[i] = obj(x[i, :])
@@ -152,7 +152,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
         # Update objective
         if mp_pool is not None:
-            fx = np.array(mp_pool.map(obj, x, chunk_size=chunk_size))
+            fx = np.array(mp_pool.map(obj, x, chunksize)).flatten()
         else:
             for i in range(x.shape[0]):
                 fx[i] = obj(x[i, :])
