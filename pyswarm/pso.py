@@ -1,8 +1,8 @@
 from functools import partial
 import numpy as np
 
-def _obj_wrapper(func, args, x):
-    return func(x, *args)
+def _obj_wrapper(func, args, state):
+    return func(state, *args)
 
 
 def minimize(func, bounds, args=(),
@@ -51,14 +51,14 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
 
     Returns
     =======
-    xg : array
+    state_g: array
         The swarm's best known position (optimal design)
-    f : scalar
-        The objective value at ``xg``
-    xp : array
+    fval: scalar
+        The objective value at ``state_g``
+    state_p: array
         The best known position per particle
-    pf: arrray
-        The objective values at each position in xp
+    fval_p: arrray
+        The objective values at each position in state_p
 
     """
     bounds = np.array(bounds)
@@ -70,11 +70,9 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     assert(bounds.shape[1] == 2)
     assert(np.all(bounds[:, 1] > bounds[:, 0]))
 
-    lb, ub = bounds[:, 0], bounds[:, 1]
-    bound_diff = ub - lb
-    vhigh = np.abs(bound_diff)
+    low_bound, up_bound = bounds[:, 0], bounds[:, 1]
+    vhigh = np.abs(up_bound - low_bound)
     vlow = -vhigh
-    vdiff = vhigh - vlow
 
     # Initialize objective function
     obj = partial(_obj_wrapper, func, args)
@@ -91,101 +89,102 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     # Initialize the particle swarm
     S = swarmsize
     D = bounds.shape[0]  # the number of dimensions each particle has
-    x = np.random.rand(S, D)  # particle positions
-    v = np.zeros((S, D))  # particle velocities
-    xp = np.zeros((S, D))  # best particle positions
-    fx = np.zeros(S)  # current particle function values
-    fp = np.ones(S) * np.inf  # best particle function values
-    xg = np.zeros(D)  # best swarm position
-    fg = np.inf  # best swarm position starting value
+    state = np.random.rand(S, D)  # particle positions
+    vel = np.zeros((S, D))  # particle velocities
+    state_p = np.zeros((S, D))  # best particle positions
+    fval = np.zeros(S)  # current particle function values
+    fval_p = np.ones(S) * np.inf  # best particle function values
+    state_g = np.zeros(D)  # best swarm position
+    fval_g = np.inf  # best swarm position starting value
     fdiff = np.inf
     xdiff = np.inf
     xeps *= xeps
 
     # Initialize the particle's position
-    x *= bound_diff
-    x += lb
+    state *= up_bound - low_bound
+    state += low_bound
 
     # Calculate objective and constraints for each particle
     if mp_pool is not None:
-        fx = np.array(mp_pool.map(obj, x, chunksize)).flatten()
+        fval = np.array(mp_pool.map(obj, state, chunksize)).flatten()
     else:
-        for i in range(x.shape[0]):
-            fx[i] = obj(x[i, :])
+        for i in range(state.shape[0]):
+            fval[i] = obj(state[i, :])
 
     # Store particle's best position
-    xp[:, :] = x[:, :]
-    fp[:] = fx[:]
+    state_p[:, :] = state[:, :]
+    fval_p[:] = fval[:]
 
     # Update swarm's best position
-    i_min = np.argmin(fp)
-    fg = fp[i_min]
-    xg[:] = xp[i_min, :]
+    i_min = np.argmin(fval_p)
+    fval_g = fval_p[i_min]
+    state_g[:] = state_p[i_min, :]
 
     # Initialize the particle's velocity
-    v = np.random.rand(S, D)
-    v *= vdiff
-    v += vlow
+    vel = np.random.rand(S, D)
+    vel *= vhigh - vlow
+    vel += vlow
 
     # Iterate until termination criterion met
     it = 1
     while it <= maxiter and fdiff > feps and xdiff > xeps:
-        rp = np.random.uniform(size=(S, D))
-        rg = np.random.uniform(size=(S, D))
+        rp = np.random.rand(S, D)
+        rg = np.random.rand(S, D)
 
         # Update the particles velocities
-        rp *= xp - x
+        rp *= state_p - state
         rp *= phip
-        rg *= xg - x
+        rg *= state_g - state
         rg *= phig
-        v *= omega
-        v += rp
-        v += rg
+        vel *= omega
+        vel += rp
+        vel += rg
 
         # Update the particles' positions
-        x += v
+        state += vel
         # Correct for bound violations
-        maskl = x < lb
-        masku = x > ub
+        maskl = state < low_bound
+        masku = state > up_bound
 
-        x *= ~np.logical_or(maskl, masku)
-        x += lb * maskl
-        x += ub * masku
+        state *= ~np.logical_or(maskl, masku)
+        state += low_bound * maskl
+        state += up_bound * masku
 
         # Update objective
         if mp_pool is not None:
-            fx = np.array(mp_pool.map(obj, x, chunksize)).flatten()
+            fval = np.array(mp_pool.map(obj, state, chunksize)).flatten()
         else:
-            for i in range(x.shape[0]):
-                fx[i] = obj(x[i, :])
+            for i in range(state.shape[0]):
+                fval[i] = obj(state[i, :])
 
         # Store particle's best position
-        i_update = fx < fp
-        xp[i_update, :] = x[i_update, :]
-        fp[i_update] = fx[i_update]
+        i_update = fval < fval_p
+        state_p[i_update, :] = state[i_update, :]
+        fval_p[i_update] = fval[i_update]
 
         # Compare swarm's best position with global best position
-        i_min = np.argmin(fp)
-        if fp[i_min] < fg:
-            xdiff = np.sum((xg - xp[i_min, :])**2)
-            fdiff = np.abs(fg - fp[i_min])
+        i_min = np.argmin(fval_p)
+        if fval_p[i_min] < fval_g:
+            xdiff = np.sum((state_g - state_p[i_min, :])**2)
+            fdiff = np.abs(fval_g - fval_p[i_min])
 
-            xg[:] = xp[i_min, :]
-            fg = fp[i_min]
+            state_g[:] = state_p[i_min, :]
+            fval_g = fval_p[i_min]
 
         if disp:
             tmp = [
                 'it={}'.format(it),
                 'fdiff={:.06f}'.format(fdiff),
                 'xdiff={:.06f}'.format(xdiff),
-                'f={:.06f}'.format(fg),
-                'x={}'.format(' '.join(['{:.06f}'.format(v) for v in xg])),
+                'f={:.06f}'.format(fval_g),
+                'state={}'.format(' '.join(['{:.06f}'.format(v)
+                    for v in state_g])),
             ]
             print('\t'.join(tmp))
 
         if callback is not None:
-            callback(xg, fg, xp, fp)
+            callback(state_g, fval_g, state_p, fval_p)
 
         it += 1
 
-    return xg, fg, xp, fp
+    return state_g, fval_g
