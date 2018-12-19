@@ -6,7 +6,7 @@ def _obj_wrapper(func, args, state):
 
 
 def minimize(func, bounds, args=(),
-swarm=None, init_guess=None, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
+swarm=None, omega=0.5, phip=0.5, phig=0.5, maxiter=100,
 xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     """
     Perform a particle swarm optimization (PSO)
@@ -61,26 +61,27 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
         The objective values at each position in state_p
 
     """
-    bounds = np.array(bounds)
+    assert(hasattr(func, '__call__'))
+    assert(callback is None or hasattr(callback, '__call__'))
+
+    if type(bounds) is list:
+        bounds = np.array(bounds)
+    assert(bounds.shape[1] == 2)
+    assert(np.all(bounds[:, 1] > bounds[:, 0]))
+
+    low_bound, up_bound = bounds[:, 0], bounds[:, 1]
 
     if swarm is None:
         swarm = int(20 * bounds.shape[0])
     if type(swarm) is int:
         swarm = np.random.rand(swarm, bounds.shape[0])
+        swarm *= up_bound - low_bound
+        swarm += low_bound
     if type(swarm) is list:
         swarm = np.array(swarm)
     assert(type(swarm) is np.ndarray)
     swarmsize = swarm.shape[0]
 
-    if init_guess is not None:
-        swarm[0, :] = init_guess
-
-    assert(hasattr(func, '__call__'))
-    assert(callback is None or hasattr(callback, '__call__'))
-    assert(bounds.shape[1] == 2)
-    assert(np.all(bounds[:, 1] > bounds[:, 0]))
-
-    low_bound, up_bound = bounds[:, 0], bounds[:, 1]
     vhigh = np.abs(up_bound - low_bound)
     vlow = -vhigh
 
@@ -109,10 +110,6 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     fdiff = np.inf
     xdiff = np.inf
     xeps *= xeps
-
-    # Initialize the particle's position
-    state *= up_bound - low_bound
-    state += low_bound
 
     # Calculate objective and constraints for each particle
     if mp_pool is not None:
