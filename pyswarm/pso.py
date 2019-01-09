@@ -109,7 +109,6 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
     fval_g = np.inf  # best swarm position starting value
     fdiff = np.inf
     xdiff = np.inf
-    xeps *= xeps
 
     # Calculate objective and constraints for each particle
     if mp_pool is not None:
@@ -172,7 +171,7 @@ xeps=1e-8, feps=1e-8, disp=False, processes=1, callback=None):
         # Compare swarm's best position with global best position
         i_min = np.argmin(fval_p)
         if fval_p[i_min] < fval_g:
-            xdiff = np.sum((state_g - state_p[i_min, :])**2)
+            xdiff = np.sqrt(np.sum((state_g - state_p[i_min, :])**2))
             fdiff = np.abs(fval_g - fval_p[i_min])
 
             state_g[:] = state_p[i_min, :]
